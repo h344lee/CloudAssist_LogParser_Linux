@@ -1555,9 +1555,9 @@ def save_record_to_df(log_df, extracted_record):
 def save_df_to_xlsx(log_df):
     # check "\output" folder and make it if it is not exist
 
-    if not os.path.isdir('output'):
-        os.makedirs('output')
-    log_df.to_excel("output\\output.xlsx", float_format="%0.2f", index=False)
+    if not os.path.isdir('00-Data Model'):
+        os.makedirs('00-Data Model')
+    log_df.to_excel("00-Data Model\\D_CLDASST_Log_Parser_Output.xlsx", float_format="%0.2f", index=False)
 
 
 # main function
