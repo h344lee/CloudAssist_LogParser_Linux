@@ -497,6 +497,7 @@ def get_user_log_content(user, log_content):
 # make a list of pair of SAS file name and the SAS file's log content
 # comment: need to implement SAS file line number part here (1/14)
 def get_sas_files(user_log_content):
+
     sas_content_list = user_log_content.split("%LET _CLIENTPROJECTPATH=")
 
     sas_content_numbered_list = sas_line_number_counter(sas_content_list)
@@ -677,7 +678,11 @@ def get_output_library_table(sas_file_content):
     output_lib_table_regex_3 = re.compile(r"NOTE: Table (.*?)\.(.*?) created, with \d+ rows and \d+ columns.")
     output_lib_table_list_3 = output_lib_table_regex_3.findall(sas_file_content)
 
-    output_lib_table_list = output_lib_table_list_1 + output_lib_table_list_2 + output_lib_table_list_3
+    output_lib_table_regex_4 = re.compile(r"NOTE: Table (.*?)\.(.*?) has been modified, with \d+ columns.")
+    output_lib_table_list_4 = output_lib_table_regex_4.findall(sas_file_content)
+
+    output_lib_table_list = output_lib_table_list_1 + output_lib_table_list_2 + output_lib_table_list_3 +\
+                            output_lib_table_list_4
 
     output_lib = ''
     output_table = ''
@@ -797,7 +802,7 @@ def proc_sql_parsing(record_content):
         sql_block = proc_sql_regex_list[0][0] + proc_sql_regex_list[0][2] + proc_sql_regex_list[0][3]
         proc_sql = get_proc_sql(sql_block)
 
-        #print(proc_sql)
+        print(proc_sql)
 
         input_library, input_table = get_input_table_from_sql(proc_sql)
 
@@ -866,6 +871,13 @@ def get_proc_sql(sql_block):
             if len(filtered_line) == 1 and filtered_line[0] != '':
                 sql_lines += filtered_line[0].strip() + " "
 
+    if sql_lines[0] == '!':
+        sql_lines = sql_lines[1:].strip()
+
+    if "The SAS System" in sql_lines :
+        sql_lines_list = re.split(r"The SAS System.*? \d\d\, \d\d\d\d ", sql_lines)
+        sql_lines = "".join(sql_lines_list)
+
     return sql_lines + ' quit;'
 
 
@@ -904,17 +916,17 @@ def get_input_table_from_sql(proc_sql):
     sql_from_order_regex = re.compile(r"from (.*?) order", re.IGNORECASE)
     sql_from_order_list = sql_from_order_regex.findall(proc_sql)
 
-    sql_from_semi_regex = re.compile(r"from (.*?)(;| )")
+    sql_from_semi_regex = re.compile(r"from (.*?)(;| )", re.IGNORECASE)
     sql_from_semi_list = sql_from_semi_regex.findall(proc_sql)
 
-    sql_from_quit_regex = re.compile(r"from (.*?) quit;")
+    sql_from_quit_regex = re.compile(r"from (.*?) quit;", re.IGNORECASE)
     sql_from_quit_list = sql_from_quit_regex.findall(proc_sql)
 
     # case 1: "from (.*?) where "
     if len(sql_from_where_list) != 0 and len(lib_table_list) == 0:
 
         # check1 whether from is in values
-        is_from_in_bracket_regex = re.compile(r'(.*?)from ', re.DOTALL)
+        is_from_in_bracket_regex = re.compile(r'(.*?)from ', re.IGNORECASE)
         from_in_bracket_list = is_from_in_bracket_regex.findall(proc_sql)
 
         prior_from = from_in_bracket_list[0]
@@ -932,7 +944,7 @@ def get_input_table_from_sql(proc_sql):
     elif len(sql_from_order_list) != 0 and len(lib_table_list) == 0:
 
         # check1 whether from is in brackets
-        is_from_in_values_regex = re.compile(r'\(.*from.*\)')
+        is_from_in_values_regex = re.compile(r'\(.*from.*\)', re.IGNORECASE)
         if re.search(is_from_in_values_regex, proc_sql) is not None:
             sql_from_order_list = []
 
@@ -943,7 +955,7 @@ def get_input_table_from_sql(proc_sql):
     elif len(sql_from_semi_list) != 0 and len(lib_table_list) == 0:
 
         # check1 whether from is in values
-        is_from_in_values_regex = re.compile(r' values\(.*? from .*?\)')
+        is_from_in_values_regex = re.compile(r' values\(.*? from .*?\)', re.IGNORECASE)
         if re.search(is_from_in_values_regex, proc_sql) is not None:
             sql_from_semi_list = []
 
@@ -954,7 +966,7 @@ def get_input_table_from_sql(proc_sql):
     elif len(sql_from_quit_list) != 0 and len(lib_table_list) == 0:
 
         # check1 whether from is in values
-        is_from_in_values_regex = re.compile(r' values\(.*? from .*?\)')
+        is_from_in_values_regex = re.compile(r' values\(.*? from .*?\)', re.IGNORECASE)
         if re.search(is_from_in_values_regex, proc_sql) is not None:
             sql_from_quit_list = []
 
@@ -1033,9 +1045,12 @@ def data_step_parsing(record_content):
 
     if len(data_step_regex_list) != 0:
         sql_block = data_step_regex_list[0][0] + data_step_regex_list[0][1] + data_step_regex_list[0][2] + \
-                    data_step_regex_list[0][3]
+                    data_step_regex_list[0][3] + ';'
 
         data_step_sql = get_data_step_sql(sql_block)
+
+        print(data_step_sql)
+
         input_library, input_table = get_input_table_from_data_sql(data_step_sql)
         output_library, output_table = get_output_table_from_data_sql(data_step_sql)
 
@@ -1127,7 +1142,9 @@ def get_data_step_sql(sql_block):
             else:
                 sql_lines = splited_sql[0]
 
-    # print(sql_lines)
+    if "The SAS System" in sql_lines:
+        sql_lines_list = re.split(r"The SAS System.*? \d\d\, \d\d\d\d ", sql_lines)
+        sql_lines = "".join(sql_lines_list)
 
     return sql_lines
 
@@ -1288,6 +1305,20 @@ def lib_table_write_to_variable(library, table, FILE_SAS_LIB, FILE_SAS_TBL):
                     FILE_SAS_TBL += ";" + tbl
 
     return FILE_SAS_LIB, FILE_SAS_TBL
+
+
+def get_macro_flag(FILE_SAS_INP_LIB, FILE_SAS_INP_TBL, FILE_SAS_OUT_LIB, FILE_SAS_OUT_TBL):
+
+    lib_tbl_str = FILE_SAS_INP_LIB +';'+ FILE_SAS_INP_TBL +';'+ FILE_SAS_OUT_LIB +';'+ FILE_SAS_OUT_TBL
+    lib_tbl_list = lib_tbl_str.split(';')
+
+    for lib_or_tbl in lib_tbl_list:
+
+        if "&" in lib_or_tbl:
+            return 1
+
+    return 0
+
 
 
 # 1. check the record_contest has a libname ABC oracle/db2/hadoop/etc
@@ -1463,6 +1494,10 @@ def get_migration_disp(FILE_SAS_EXC_CPU_TM, FILE_SAS_EXC_RL_TM, FILE_SAS_STP, FI
         recommendation = "Code Change"
         RULE_ID = '22'
         REC_ACT = 'Neglect VARFMT function because it is Obsolete.'
+    elif FILE_SAS_EXC_CPU_TM >= FILE_SAS_EXC_RL_TM and FILE_SAS_EXC_CPU_TM >= 10:
+        recommendation = "Code Change"
+        RULE_ID = '23'
+        REC_ACT = 'new rule: Consider reducing cpu time so that it is less then real time'
 
     return REC_ACT, RULE_ID, recommendation
 
@@ -1493,7 +1528,8 @@ def get_migr_rule(FILE_SAS_MIGR_RUL_ID):
         "19": "INFILE in Data statement",
         "20": "INPUT in Data statement",
         "21": "DATALINES in Data statement",
-        "22": "VARFMT function present"
+        "22": "VARFMT function present",
+        "23": "CPU Time >= Real Time AND CPU TIME >= 10"
     }
     migration_rule = migr_rule_dict.get(FILE_SAS_MIGR_RUL_ID)
     return migration_rule
@@ -1580,8 +1616,10 @@ if __name__ == "__main__":
     FILE_SAS_OUT_LIB = ""
     FILE_SAS_OUT_TBL = ""
     FILE_SAS_ROW_WRT = ""
+
     FILE_SAS_INP_MUL_FLG = ""
     FILE_SAS_INP_MUL_TBLS = ""
+    FILE_SAS_MACRO_FLG = ""
     FILE_SAS_EXT_DB = ""
     FILE_EXC_DT = ""
     FILE_SAS_EXC_TM = ""
@@ -1606,7 +1644,8 @@ if __name__ == "__main__":
                                    'FILE_SAS_STP_NM', 'FILE_LN_NUM', 'FILE_SAS_INP_LIB',
                                    'FILE_SAS_INP_TBL', 'FILE_SAS_INP_FIL_NM', 'FILE_SAS_INP_ROW_RD',
                                    'FILE_SAS_OUT_LIB', 'FILE_SAS_OUT_TBL', 'FILE_SAS_ROW_WRT',
-                                   'FILE_SAS_INP_MUL_FLG', 'FILE_SAS_INP_MUL_TBLS', 'FILE_SAS_EXT_DB', 'FILE_EXC_DT',
+                                   'FILE_SAS_INP_MUL_FLG', 'FILE_SAS_INP_MUL_TBLS', 'FILE_SAS_MACRO_FLG',
+                                   'FILE_SAS_EXT_DB', 'FILE_EXC_DT',
                                    'FILE_SAS_EXC_TM', 'FILE_SAS_EXC_CPU_TM', 'FILE_SAS_EXC_RL_TM',
                                    'FILE_SAS_PROC_CAT', 'FILE_SAS_PROC_PROD', 'FILE_SAS_MIGR_DISP',
                                    'FILE_SAS_MIGR_RUL_ID', 'FILE_SAS_MIGR_RUL', 'FILE_SAS_MIGR_REC_ACT',
@@ -1641,6 +1680,7 @@ if __name__ == "__main__":
 
             temp_num = 1
 
+            #record_content_list = re.split(r"seconds\n.* -       \n", sas_file_content)
             record_content_list = re.split(r"seconds\n.* -       \n", sas_file_content)
             for record_content in record_content_list:
                 if record_content[-25:-17] != 'cpu time':
@@ -1666,9 +1706,15 @@ if __name__ == "__main__":
                     FILE_SAS_F_NM = ""
                     FILE_SAS_F_ID = ""
                 FILE_SAS_INP_ROW_RD, FILE_SAS_INP_FIL_NM = get_input_file_name(record_content)
+                if FILE_SAS_INP_FIL_NM != "":
+                    FILE_SAS_INP_TBL = FILE_SAS_INP_FIL_NM.split('/')[-1]
+                    FILE_SAS_INP_LIB = 'Ext'
+                else:
+                    FILE_SAS_INP_LIB, FILE_SAS_INP_TBL = get_input_library_table(record_content)
+
                 FILE_SAS_OUT_LIB, FILE_SAS_OUT_TBL = get_output_library_table(record_content)
 
-                FILE_SAS_INP_LIB, FILE_SAS_INP_TBL = get_input_library_table(record_content)
+
                 # FILE_SAS_INP_ROW_RD  # Need to get some example to implement
                 if FILE_SAS_F_LOC == "":
                     FILE_LN_NUM = ""
@@ -1713,6 +1759,8 @@ if __name__ == "__main__":
                                                                                  FILE_SAS_OUT_LIB,
                                                                                  FILE_SAS_OUT_TBL)
 
+                FILE_SAS_MACRO_FLG = get_macro_flag(FILE_SAS_INP_LIB, FILE_SAS_INP_TBL, FILE_SAS_OUT_LIB, FILE_SAS_OUT_TBL)
+
                 ext_db_list = get_ext_db(record_content)
                 FILE_SAS_EXT_DB = ';'.join(ext_db_list)
                 if FILE_SAS_EXT_DB != "":
@@ -1754,9 +1802,9 @@ if __name__ == "__main__":
                                     FILE_SAS_F_NM, FILE_SAS_STP, FILE_SAS_STP_NM, FILE_LN_NUM, FILE_SAS_INP_LIB,
                                     FILE_SAS_INP_TBL, FILE_SAS_INP_FIL_NM, FILE_SAS_INP_ROW_RD, FILE_SAS_OUT_LIB,
                                     FILE_SAS_OUT_TBL, FILE_SAS_ROW_WRT, FILE_SAS_INP_MUL_FLG, FILE_SAS_INP_MUL_TBLS,
-                                    FILE_SAS_EXT_DB, FILE_EXC_DT, FILE_SAS_EXC_TM, FILE_SAS_EXC_CPU_TM,
-                                    FILE_SAS_EXC_RL_TM, FILE_SAS_PROC_CAT, FILE_SAS_PROC_PROD, FILE_SAS_MIGR_DISP,
-                                    FILE_SAS_MIGR_RUL_ID, FILE_SAS_MIGR_RUL, FILE_SAS_MIGR_REC_ACT,
+                                    FILE_SAS_MACRO_FLG, FILE_SAS_EXT_DB, FILE_EXC_DT, FILE_SAS_EXC_TM,
+                                    FILE_SAS_EXC_CPU_TM, FILE_SAS_EXC_RL_TM, FILE_SAS_PROC_CAT, FILE_SAS_PROC_PROD,
+                                    FILE_SAS_MIGR_DISP, FILE_SAS_MIGR_RUL_ID, FILE_SAS_MIGR_RUL, FILE_SAS_MIGR_REC_ACT,
                                     FILE_SAS_PROC_INMEM_FLG,
                                     FILE_SAS_PROC_ELT_FLG, FILE_SAS_PROC_GRID_FLG, FILE_SAS_PROC_INDB_FLG,
                                     FILE_SAS_SRC_TYP, FILE_SAS_ENV_NAME]
