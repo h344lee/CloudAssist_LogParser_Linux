@@ -1680,8 +1680,13 @@ if __name__ == "__main__":
 
             temp_num = 1
 
-            #record_content_list = re.split(r"seconds\n.* -       \n", sas_file_content)
-            record_content_list = re.split(r"seconds\n.* -       \n", sas_file_content)
+            if re.search(r"cpu time .*? seconds\n.*? - \d+\s+The SAS System.*? \d\d\d\d", sas_file_content):
+                sas_file_content = re.sub(r' \d+\s+The SAS System.*? \d\d\d\d', '       ', sas_file_content)
+            else:
+                sas_file_content = re.sub(r' \d+\s+The SAS System.*? \d\d\d\d', '              ', sas_file_content)
+
+            record_content_list = re.split(r"seconds\n.*? -       \n", sas_file_content)
+
             for record_content in record_content_list:
                 if record_content[-25:-17] != 'cpu time':
                     continue
