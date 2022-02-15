@@ -651,14 +651,23 @@ def get_time_info(sas_file_content):
 def get_process_time(sas_file_content):
     cpu_time_regex = re.compile(r"cpu time \s+(\d+.\d+)")
     cpu_time_regex_obj = cpu_time_regex.search(sas_file_content)
-    cpu_time = cpu_time_regex_obj.group(1)
+    if cpu_time_regex_obj is None:
+        cpu_time_regex = re.compile(r"cpu time \s+(\d+:\d+.\d+) ")
+        cpu_time_regex_obj = cpu_time_regex.search(sas_file_content)
+        cpu_time_list = cpu_time_regex_obj.split(':')
+        cpu_time = float(cpu_time_list[0]) * 60 + float(cpu_time_list[1])
+    else:
+        cpu_time = float(cpu_time_regex_obj.group(1))
 
     real_time_regex = re.compile(r"real time \s+(\d+.\d+)")
     real_time_regex_obj = real_time_regex.search(sas_file_content)
     if real_time_regex_obj is None:
-        real_time_regex_ver2 = re.compile(r"real time \s+(\d+:\d+).")
-        real_time_regex_obj = real_time_regex_ver2.search(sas_file_content)
-    real_time = real_time_regex_obj.group(1)
+        real_time_regex = re.compile(r"real time \s+(\d+:\d+.\d+) ")
+        real_time_regex_obj = real_time_regex.search(sas_file_content)
+        real_time_list = real_time_regex_obj.split(':')
+        real_time = float(real_time_list[0]) * 60 + float(cpu_time_list[1])
+    else:
+        real_time = float(real_time_regex_obj.group(1))
 
     return cpu_time, real_time
 
@@ -807,6 +816,11 @@ def proc_sql_parsing(record_content):
         input_library, input_table = get_input_table_from_sql(proc_sql)
 
         output_library, output_table = get_output_table_from_sql(proc_sql)
+    # elif 'proc' in record_content and len(proc_sql_regex_list) == 0:
+    #     print("cannot get proc sql")
+    #     print(record_content)
+    #     print("****************")
+
 
     return input_library, input_table, output_library, output_table
 
@@ -1088,7 +1102,7 @@ def get_data_step_sql(sql_block):
                 if len(mprint_block_line_list) == 1 and mprint_block_line_list != '' and \
                         mprint_block_line_list[0][:4] != 'SYMB':
                     sql_lines += mprint_block_line_list[0]
-
+            sql_lines += ' run;'
     # number + case :  - 1354      +set DmdMgt.GEOBRANDSUPADDS(where=(country_code='US'));
     if sql_lines == "":
 
@@ -1142,9 +1156,6 @@ def get_data_step_sql(sql_block):
             else:
                 sql_lines = splited_sql[0]
 
-    if "The SAS System" in sql_lines:
-        sql_lines_list = re.split(r"The SAS System.*? \d\d\, \d\d\d\d ", sql_lines)
-        sql_lines = "".join(sql_lines_list)
 
     return sql_lines
 
@@ -1384,17 +1395,17 @@ def get_migration_disp(FILE_SAS_EXC_CPU_TM, FILE_SAS_EXC_RL_TM, FILE_SAS_STP, FI
     REC_ACT = ""
     recommendation = "Lift and Shift"
 
-    cpu_time_list = FILE_SAS_EXC_CPU_TM.split(':')
-    if len(cpu_time_list) == 2:
-        FILE_SAS_EXC_CPU_TM = float(cpu_time_list[0] * 60) + float(cpu_time_list[1])
-    else:
-        FILE_SAS_EXC_CPU_TM = float(FILE_SAS_EXC_CPU_TM)
-
-    real_time_list = FILE_SAS_EXC_RL_TM.split(':')
-    if len(real_time_list) == 2:
-        FILE_SAS_EXC_RL_TM = float(real_time_list[0] * 60) + float(real_time_list[1])
-    else:
-        FILE_SAS_EXC_RL_TM = float(FILE_SAS_EXC_RL_TM)
+    # cpu_time_list = str(FILE_SAS_EXC_CPU_TM).split(':')
+    # if len(cpu_time_list) == 2:
+    #     FILE_SAS_EXC_CPU_TM = float(cpu_time_list[0] * 60) + float(cpu_time_list[1])
+    # else:
+    #     FILE_SAS_EXC_CPU_TM = float(FILE_SAS_EXC_CPU_TM)
+    #
+    # real_time_list = FILE_SAS_EXC_RL_TM.split(':')
+    # if len(real_time_list) == 2:
+    #     FILE_SAS_EXC_RL_TM = float(real_time_list[0] * 60) + float(real_time_list[1])
+    # else:
+    #     FILE_SAS_EXC_RL_TM = float(FILE_SAS_EXC_RL_TM)
 
     data_statement = ""
 
@@ -1736,6 +1747,8 @@ if __name__ == "__main__":
 
                 FILE_EXC_DT, FILE_SAS_EXC_TM = get_time_info(record_content)
                 FILE_SAS_EXC_CPU_TM, FILE_SAS_EXC_RL_TM = get_process_time(record_content)
+
+                print(type(FILE_SAS_EXC_RL_TM))
 
                 rows, libs, tbls = get_sas_row_write(record_content)
                 if rows is not None:
