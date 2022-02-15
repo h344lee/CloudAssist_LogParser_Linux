@@ -1604,8 +1604,8 @@ def save_df_to_xlsx(log_df):
 
     if not os.path.isdir('00-Data Model'):
         os.makedirs('00-Data Model')
-    log_df.to_excel("00-Data Model\\D_CLDASST_Log_Parser_Output.xlsx", float_format="%0.2f", index=False)
-
+    log_df.to_excel("00-Data Model\\D_CLDASST_DISC_LOG_O.xlsx", float_format="%0.2f", index=False)
+    log_df.to_csv("00-Data Model\\D_CLDASST_DISC_LOG_O.csv", float_format="%0.2f", index=False)
 
 # main function
 if __name__ == "__main__":
