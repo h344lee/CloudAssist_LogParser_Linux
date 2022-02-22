@@ -497,7 +497,6 @@ def get_user_log_content(user, log_content):
 # make a list of pair of SAS file name and the SAS file's log content
 # comment: need to implement SAS file line number part here (1/14)
 def get_sas_files(user_log_content):
-
     sas_content_list = user_log_content.split("%LET _CLIENTPROJECTPATH=")
 
     sas_content_numbered_list = sas_line_number_counter(sas_content_list)
@@ -690,7 +689,7 @@ def get_output_library_table(sas_file_content):
     output_lib_table_regex_4 = re.compile(r"NOTE: Table (.*?)\.(.*?) has been modified, with \d+ columns.")
     output_lib_table_list_4 = output_lib_table_regex_4.findall(sas_file_content)
 
-    output_lib_table_list = output_lib_table_list_1 + output_lib_table_list_2 + output_lib_table_list_3 +\
+    output_lib_table_list = output_lib_table_list_1 + output_lib_table_list_2 + output_lib_table_list_3 + \
                             output_lib_table_list_4
 
     output_lib = ''
@@ -811,7 +810,7 @@ def proc_sql_parsing(record_content):
         sql_block = proc_sql_regex_list[0][0] + proc_sql_regex_list[0][2] + proc_sql_regex_list[0][3]
         proc_sql = get_proc_sql(sql_block)
 
-        print(proc_sql)
+        # print(proc_sql)
 
         input_library, input_table = get_input_table_from_sql(proc_sql)
 
@@ -820,7 +819,6 @@ def proc_sql_parsing(record_content):
     #     print("cannot get proc sql")
     #     print(record_content)
     #     print("****************")
-
 
     return input_library, input_table, output_library, output_table
 
@@ -888,7 +886,7 @@ def get_proc_sql(sql_block):
     if sql_lines[0] == '!':
         sql_lines = sql_lines[1:].strip()
 
-    if "The SAS System" in sql_lines :
+    if "The SAS System" in sql_lines:
         sql_lines_list = re.split(r"The SAS System.*? \d\d\, \d\d\d\d ", sql_lines)
         sql_lines = "".join(sql_lines_list)
 
@@ -1063,7 +1061,7 @@ def data_step_parsing(record_content):
 
         data_step_sql = get_data_step_sql(sql_block)
 
-        print(data_step_sql)
+        # print(data_step_sql)
 
         input_library, input_table = get_input_table_from_data_sql(data_step_sql)
         output_library, output_table = get_output_table_from_data_sql(data_step_sql)
@@ -1155,7 +1153,6 @@ def get_data_step_sql(sql_block):
                 sql_lines = splited_sql[1].strip()
             else:
                 sql_lines = splited_sql[0]
-
 
     return sql_lines
 
@@ -1319,8 +1316,7 @@ def lib_table_write_to_variable(library, table, FILE_SAS_LIB, FILE_SAS_TBL):
 
 
 def get_macro_flag(FILE_SAS_INP_LIB, FILE_SAS_INP_TBL, FILE_SAS_OUT_LIB, FILE_SAS_OUT_TBL):
-
-    lib_tbl_str = FILE_SAS_INP_LIB +';'+ FILE_SAS_INP_TBL +';'+ FILE_SAS_OUT_LIB +';'+ FILE_SAS_OUT_TBL
+    lib_tbl_str = FILE_SAS_INP_LIB + ';' + FILE_SAS_INP_TBL + ';' + FILE_SAS_OUT_LIB + ';' + FILE_SAS_OUT_TBL
     lib_tbl_list = lib_tbl_str.split(';')
 
     for lib_or_tbl in lib_tbl_list:
@@ -1329,7 +1325,6 @@ def get_macro_flag(FILE_SAS_INP_LIB, FILE_SAS_INP_TBL, FILE_SAS_OUT_LIB, FILE_SA
             return 1
 
     return 0
-
 
 
 # 1. check the record_contest has a libname ABC oracle/db2/hadoop/etc
@@ -1545,9 +1540,9 @@ def get_migr_rule(FILE_SAS_MIGR_RUL_ID):
     migration_rule = migr_rule_dict.get(FILE_SAS_MIGR_RUL_ID)
     return migration_rule
 
+
 #
 def get_proc_inmem(FILE_SAS_STP, FILE_SAS_STP_NM):
-
     if FILE_SAS_STP == "PROCEDURE Statement" and (FILE_SAS_STP_NM == 'LASR' or FILE_SAS_STP_NM == 'IAMSTAT'):
         return 1
     else:
@@ -1555,21 +1550,117 @@ def get_proc_inmem(FILE_SAS_STP, FILE_SAS_STP_NM):
 
 
 def get_proc_etl(FILE_SAS_PROC_CAT, FILE_SAS_STP, FILE_SAS_STP_NM):
-    if FILE_SAS_PROC_CAT == 'Data Management' and FILE_SAS_STP == 'PROCEDURE Statement' and FILE_SAS_STP_NM in ["APPEND", "CONTESTS", "DATASETS", "SORT", "SQL", "IMPORT"]:
+    if FILE_SAS_PROC_CAT == 'Data Management' and FILE_SAS_STP == 'PROCEDURE Statement' and FILE_SAS_STP_NM in [
+        "APPEND", "CONTESTS", "DATASETS", "SORT", "SQL", "IMPORT"]:
         return 1
     else:
         return 0
 
 
 def get_proc_grid(record_content):
-    if "%sysfunc(grdsvc_enable(" in record_content or "%qsysfunc(grdsvc_enable(" in record_content:
-        return 1
-    else:
-        return 0
+    grid_keyword = ('GRIDOPTSET',
+                    'GRIDWAITTIMEOUT',
+                    'GRIDWAITRESULTS',
+                    'GRIDRUNSASLM',
+                    'GRIDRUNSASDMS',
+                    'GRIDRUNCMDINT',
+                    'GRIDWATCHOUTPUT',
+                    'GRIDWAITLOGLIST',
+                    'GRIDWAITNORESULTS',
+                    'GRIDWAITNORESULTSNOLOG',
+                    'GRIDRUNPGM',
+                    'GRDSVC_HOSTLIST',
+                    'GRDSVC_OPTSETS',
+                    'GRIDAPPSERVER',
+                    'GRIDFILESIN',
+                    'GRIDFORCECLEAN',
+                    'GRIDGETRESULTS',
+                    'GRIDGETSTATUS',
+                    'GRIDJOBNAME',
+                    'GRIDJOBOPTS',
+                    'GRIDKILLJOB',
+                    'GRIDLICENSEFILE',
+                    'GRIDLRESTARTOK',
+                    'GRIDOPTSET',
+                    'GRIDPASSWORD',
+                    'GRIDPASS',
+                    'GRIDPWD',
+                    'GRIDPLUGINPATH',
+                    'GRIDRESTARTOK',
+                    'GRIDRESULTSDIR',
+                    'GRIDRUNCMD',
+                    'GRIDRUNCMDINT',
+                    'GRIDRUNPGM',
+                    'GRIDRUNSASDMS',
+                    'GRIDRUNSASLM',
+                    'GRIDSASOPTS',
+                    'GRIDSETPERMS',
+                    'GRIDSTAGECMD',
+                    'GRIDSTAGEHOST',
+                    'GRIDSUBMITPGM',
+                    'GRIDWAIT',
+                    'GRIDWAITLOGLIST',
+                    'GRIDWAITNORESULTS',
+                    'GRIDWAITRESULTS',
+                    'GRIDWAITRESULTSNOLOG',
+                    'GRIDWAITTIMEOUT',
+                    'GRIDWATCHOUTPUT',
+                    'GRIDWORKLOAD',
+                    'GRDSVC_ENABLE ',
+                    'GRDSVC_GETADDR ',
+                    'GRDSVC_GETINFO ',
+                    'GRDSVC_GETNAME ',
+                    'GRDSVC_HOSTLIST ',
+                    'GRDSVC_NNODES ',
+                    'GRDSVC_OPTSETS',
+                    'SASGSUB',
+                    'GRIDSUBMITPGM ',
+                    'GRIDLRESTART',
+                    'GRIDSASOPTS ',
+                    'GRIDRUNPGM',
+                    'GRIDRUNSASLM',
+                    'GRIDRUNSASDMS',
+                    'GRIDWAITTIMEOUT ',
+                    'GRIDRUNCMD ',
+                    'GRIDRUNCMDINT ',
+                    'GRIDWAITTIMEOUT',
+                    'GRIDKILLJOB ',
+                    'GRIDGETSTATUS ',
+                    'GRIDGETRESULTS ',
+                    'GRIDRESULTSDIR ',
+                    'GRIDFORCECLEAN',
+                    'GRIDAPPSERVER ',
+                    'CLEANGRIDWORK ',
+                    'GRIDWORK',
+                    'GRIDWORKREM ',
+                    'GRIDFILESIN ',
+                    'GRIDSTAGECMD',
+                    'GRIDSTAGEHOST',
+                    'GRIDWAIT',
+                    'GRIDWAITTIMEOUTGRIDWAITRESULTS',
+                    'GRIDWAITLOGLIST',
+                    'GRIDWAITNORESULTS',
+                    'GRIDWAITRESULTSNOLOG',
+                    'GRIDWATCHOUTPUT',
+                    'GRIDJOBNAME ',
+                    'GRIDJOBOPTS',
+                    'GRIDOPTSET',
+                    'GRIDWORKLOAD',
+                    'GRDSVC_ENABLE',
+                    'SASGSUB ',
+                    'GRIDSUBMITPGM ',
+                    'GRIDRESTARTOK',
+                    'GRIDLRESTARTOK',
+                    'GRIDSASOPTS')
+
+    for keyword in grid_keyword:
+        if keyword in record_content.upper():
+            return 1
+
+    return 0
 
 
 def get_indb(record_content):
-
     external_database_tuple = (
         'redshift', 'aster', 'db2' 'bigquery', 'greenplm', 'hadoop', 'hawq', 'impala', 'informix', 'jdbc', 'sqlsvr',
         'mysql', 'netezza', 'odbc', 'oledb', 'oracle', 'postgres', 'sapase', 'saphana', 'sapiq', 'snow', 'spark',
@@ -1595,6 +1686,7 @@ def get_indb(record_content):
 # update a row of record to the given dataframe 'log_df'
 def save_record_to_df(log_df, extracted_record):
     updated_log_df = log_df.append(pd.Series(extracted_record, index=log_df.columns), ignore_index=True)
+
     return updated_log_df
 
 
@@ -1602,10 +1694,14 @@ def save_record_to_df(log_df, extracted_record):
 def save_df_to_xlsx(log_df):
     # check "\output" folder and make it if it is not exist
 
+    # print(log_df.iloc[2])
+
     if not os.path.isdir('00-Data Model'):
         os.makedirs('00-Data Model')
     log_df.to_excel("00-Data Model\\D_CLDASST_DISC_LOG_O.xlsx", float_format="%0.2f", index=False)
-    log_df.to_csv("00-Data Model\\D_CLDASST_DISC_LOG_O.csv", float_format="%0.2f", index=False)
+    log_df.to_csv("00-Data Model\\D_CLDASST_DISC_LOG_O.csv", float_format="%0.2f", index=False,
+                  date_format='%Y-%m-%d %H:%M:%S')
+
 
 # main function
 if __name__ == "__main__":
@@ -1730,7 +1826,6 @@ if __name__ == "__main__":
 
                 FILE_SAS_OUT_LIB, FILE_SAS_OUT_TBL = get_output_library_table(record_content)
 
-
                 # FILE_SAS_INP_ROW_RD  # Need to get some example to implement
                 if FILE_SAS_F_LOC == "":
                     FILE_LN_NUM = ""
@@ -1746,9 +1841,11 @@ if __name__ == "__main__":
                     FILE_SAS_INP_ROW_RD = FILE_SAS_INP_FIL_NM = ""
 
                 FILE_EXC_DT, FILE_SAS_EXC_TM = get_time_info(record_content)
-                FILE_SAS_EXC_CPU_TM, FILE_SAS_EXC_RL_TM = get_process_time(record_content)
 
-                print(type(FILE_SAS_EXC_RL_TM))
+                # print(FILE_EXC_DT)
+                # print(FILE_SAS_EXC_TM)
+
+                FILE_SAS_EXC_CPU_TM, FILE_SAS_EXC_RL_TM = get_process_time(record_content)
 
                 rows, libs, tbls = get_sas_row_write(record_content)
                 if rows is not None:
@@ -1777,7 +1874,8 @@ if __name__ == "__main__":
                                                                                  FILE_SAS_OUT_LIB,
                                                                                  FILE_SAS_OUT_TBL)
 
-                FILE_SAS_MACRO_FLG = get_macro_flag(FILE_SAS_INP_LIB, FILE_SAS_INP_TBL, FILE_SAS_OUT_LIB, FILE_SAS_OUT_TBL)
+                FILE_SAS_MACRO_FLG = get_macro_flag(FILE_SAS_INP_LIB, FILE_SAS_INP_TBL, FILE_SAS_OUT_LIB,
+                                                    FILE_SAS_OUT_TBL)
 
                 ext_db_list = get_ext_db(record_content)
                 FILE_SAS_EXT_DB = ';'.join(ext_db_list)
