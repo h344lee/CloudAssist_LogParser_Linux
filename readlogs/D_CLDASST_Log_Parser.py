@@ -467,9 +467,7 @@ def getInventory(current_path, current_folder, visited, file_list):
             getInventory(current_path, child_folder, visited, file_list)
 
 
-
 def get_sas_file_id(current_path, current_folder, visited, file_list):
-
     if platform.system() == 'Windows':
         current_path = current_path + '\\' + current_folder
     else:
@@ -504,10 +502,15 @@ def get_sas_file_id(current_path, current_folder, visited, file_list):
 
     sas_file_dict = dict()
     counter = 1
+    sas_extensions = ['ddf', 'djf', 'egp', 'sas', 'sas7bcat', 'sas7bdat', 'sas7bitm', 'sc2', 'sct01', 'sd2', 'spds9',
+                      'sri', 'ssd01', 'xsq']
     for path, file_name in file_list:
-        sas_file_dict[path] = 'SF_'+str(counter)
+        extension = file_name.split('.')[1]
+        if extension in sas_extensions:
+            sas_file_dict[path] = 'SF_' + str(counter)
 
     return sas_file_dict
+
 
 # read log contents from given file_path
 # return log file as a big string
@@ -1585,7 +1588,55 @@ def get_migr_rule(FILE_SAS_MIGR_RUL_ID):
 
 
 #
-def get_proc_inmem(FILE_SAS_STP, FILE_SAS_STP_NM):
+def get_proc_inmem(record_content, FILE_SAS_STP, FILE_SAS_STP_NM):
+    inmem_tuple = ('SAS_INSTALL_EP',
+                   '%INDTD_PUBLISH_MODEL',
+                   '%INDAC_PUBLISH_MODEL',
+                   '%INDB2_PUBLISH_MODEL ',
+                   '%INDGP_PUBLISH_MODEL ',
+                   '%INDHD_PUBLISH_MODEL',
+                   '%INDNZ_PUBLISH_MODEL ',
+                   '%INDOR_PUBLISH_MODEL ',
+                   '%INDHN_PUBLISH_MODEL ',
+                   '%INDHN_RUN_MODEL ',
+                   '%INDHD_RUN_MODEL',
+                   'SQLGENERATION ',
+                   'DSACCEL',
+                   'HADOOPPLATFORM',
+                   'SQLGENERATION',
+                   'SQLMAPPUTTO',
+                   'SQLREDUCEPUT',
+                   'SAS_EP ',
+                   'SAS_EP_ENABLE_EPCS',
+                   'SAS_SCORE_EP ',
+                   'SAS_EP_JOB_MANAGEMENT_URL ',
+                   'SASEPFUNC',
+                   'DSACCEL',
+                   '%INDTD_CREATE_MODELTABLE ',
+                   '%INDB2_CREATE_MODELTABLE',
+                   '%INDNZ_CREATE_MODELTABLE',
+                   '%INDOR_CREATE_MODELTABLE ',
+                   'SAS_SCORE_EP',
+                   'SAS_SYSFNLIB',
+                   'HPSVM',
+                   'HPFOREST ',
+                   'SAS_SCORE',
+                   'INDCONN ',
+                   'EM_PREDICTION',
+                   'DS2ACCEL=YES',
+                   'SQLGENERATION',
+                   'DSACCEL',
+                   'HADOOPPLATFORM',
+                   'SQLGENERATION',
+                   'SQLMAPPUTTO',
+                   'SQLREDUCEPUT',
+                   'EM_PROBABILITY',
+                   'EM_DECISION')
+
+    for keyword in inmem_tuple:
+        if keyword in record_content.upper():
+            return 1
+
     if FILE_SAS_STP == "PROCEDURE Statement" and (FILE_SAS_STP_NM == 'LASR' or FILE_SAS_STP_NM == 'IAMSTAT'):
         return 1
     else:
@@ -1815,8 +1866,8 @@ if __name__ == "__main__":
     file_id_counter = 1
     sas_file_id_counter = 1
     file_list = []
-    sas_file_dict = get_sas_file_id(current_path, current_folder, visited, file_list)  # key: sas_file_abs_path, value: FILE_SAS_F_ID
-
+    sas_file_dict = get_sas_file_id(current_path, current_folder, visited,
+                                    file_list)  # key: sas_file_abs_path, value: FILE_SAS_F_ID
 
     for file_path, file_name in file_list:
 
@@ -1949,7 +2000,7 @@ if __name__ == "__main__":
 
                 FILE_SAS_MIGR_RUL = get_migr_rule(FILE_SAS_MIGR_RUL_ID)
 
-                FILE_SAS_PROC_INMEM_FLG = get_proc_inmem(FILE_SAS_STP, FILE_SAS_STP_NM)
+                FILE_SAS_PROC_INMEM_FLG = get_proc_inmem(record_content, FILE_SAS_STP, FILE_SAS_STP_NM)
 
                 FILE_SAS_PROC_ELT_FLG = get_proc_etl(FILE_SAS_PROC_CAT, FILE_SAS_STP, FILE_SAS_STP_NM)
 
