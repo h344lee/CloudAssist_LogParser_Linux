@@ -1,4 +1,5 @@
 import os
+import platform
 import re
 import logging
 import pandas as pd
@@ -465,6 +466,48 @@ def getInventory(current_path, current_folder, visited, file_list):
             logging.debug("go down to " + child_folder)
             getInventory(current_path, child_folder, visited, file_list)
 
+
+
+def get_sas_file_id(current_path, current_folder, visited, file_list):
+
+    if platform.system() == 'Windows':
+        current_path = current_path + '\\' + current_folder
+    else:
+        current_path = current_path + '/' + current_folder
+
+    visited[current_path] = True
+    logging.debug("current path is " + current_path)
+    folders = []
+    current_path_files = os.listdir(current_path)
+    for file_or_folder in current_path_files:
+        if platform.system() == 'Windows':
+            child_path = current_path + '\\' + file_or_folder
+        else:
+            child_path = current_path + '/' + file_or_folder
+
+        if os.path.isdir(child_path):
+            folders.append(file_or_folder)
+        else:
+
+            file_list.append((current_path, file_or_folder))
+
+    for child_folder in folders:
+
+        if platform.system() == 'Windows':
+            child_path = current_path + '\\' + child_folder
+        else:
+            child_path = current_path + '/' + child_folder
+
+        if visited.get(child_path) is None:
+            logging.debug("go down to " + child_folder)
+            getInventory(current_path, child_folder, visited, file_list)
+
+    sas_file_dict = dict()
+    counter = 1
+    for path, file_name in file_list:
+        sas_file_dict[path] = 'SF_'+str(counter)
+
+    return sas_file_dict
 
 # read log contents from given file_path
 # return log file as a big string
@@ -1771,7 +1814,9 @@ if __name__ == "__main__":
 
     file_id_counter = 1
     sas_file_id_counter = 1
-    sas_file_dict = dict()  # key: sas_file_abs_path, value: FILE_SAS_F_ID
+    file_list = []
+    sas_file_dict = get_sas_file_id(current_path, current_folder, visited, file_list)  # key: sas_file_abs_path, value: FILE_SAS_F_ID
+
 
     for file_path, file_name in file_list:
 
