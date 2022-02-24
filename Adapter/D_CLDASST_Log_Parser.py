@@ -522,8 +522,8 @@ def get_sas_file_id(current_path, current_folder, visited, file_list):
     for path, file_name in file_list:
         extension = file_name.split('.')[1]
         if extension in sas_extensions:
-            sas_file_dict[path] = 'SF_' + str(counter)
-
+            sas_file_dict[file_name] = 'SF_' + str(counter)
+            counter+=1
     return sas_file_dict
 
 
@@ -1929,12 +1929,13 @@ if __name__ == "__main__":
 
                 # update sas file id and sas file name and path if it is updated.
                 if sas_file_abs_path != '':
-                    if sas_file_dict.get(sas_file_abs_path) is None:
-                        sas_file_dict[sas_file_abs_path] = 'SF_' + str(sas_file_id_counter)
-                        sas_file_id_counter += 1
-                    FILE_SAS_F_ID = sas_file_dict.get(sas_file_abs_path)
                     sas_file_norm_path = os.path.normpath(sas_file_abs_path)
                     FILE_SAS_F_NM = sas_file_norm_path.split(os.sep)[-1]
+                    if sas_file_dict.get(FILE_SAS_F_NM) is None:
+                        sas_file_dict[FILE_SAS_F_NM] = 'SF_' + str(sas_file_id_counter)
+                        sas_file_id_counter += 1
+                    FILE_SAS_F_ID = sas_file_dict.get(FILE_SAS_F_NM)
+
 
                 FILE_USR_NM = get_user_name(record_content)
                 FILE_SAS_F_LOC = sas_file_abs_path
@@ -2055,6 +2056,6 @@ if __name__ == "__main__":
                 FILE_SAS_ROW_WRT = FILE_SAS_OUT_LIB = FILE_SAS_OUT_TBL = ""
                 FILE_SAS_INP_ROW_RD = FILE_SAS_INP_LIB = FILE_SAS_INP_TBL = ""
 
-        save_df_to_xlsx(log_df)
+    save_df_to_xlsx(log_df)
 
 logging.info('end of the program')
