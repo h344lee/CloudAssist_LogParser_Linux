@@ -1809,8 +1809,8 @@ def save_df_to_xlsx(log_df):
         if not os.path.isdir('..\\Data_Model\\Extracted_Files'):
             os.makedirs('..\\Data_Model\\Extracted_Files')
 
-        log_df.to_excel("Data_Model\\Extracted_Files\\D_CLDASST_DISC_LOG_O.xlsx", float_format="%0.2f", index=False)
-        log_df.to_csv("Data_Model\\Extracted_Files\\D_CLDASST_DISC_LOG_O.csv", float_format="%0.2f", index=False,
+        log_df.to_excel("..\\Data_Model\\Extracted_Files\\D_CLDASST_DISC_LOG_O.xlsx", float_format="%0.2f", index=False)
+        log_df.to_csv("..\\Data_Model\\Extracted_Files\\D_CLDASST_DISC_LOG_O.csv", float_format="%0.2f", index=False,
                   date_format='%Y-%m-%d %H:%M:%S')
     else:
 
