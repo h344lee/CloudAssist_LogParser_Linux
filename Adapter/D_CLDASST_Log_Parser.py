@@ -2004,9 +2004,9 @@ if __name__ == "__main__":
 
                 ext_db_list = get_ext_db(record_content)
                 FILE_SAS_EXT_DB = ';'.join(ext_db_list)
-                if FILE_SAS_EXT_DB != "":
-                    FILE_SAS_OUT_LIB = FILE_SAS_OUT_TBL = FILE_SAS_INP_LIB = FILE_SAS_INP_TBL = FILE_SAS_ROW_WRT = ""
-                    FILE_SAS_INP_MUL_TBLS = FILE_SAS_INP_MUL_FLG = 0
+                # if FILE_SAS_EXT_DB != "":
+                #     FILE_SAS_OUT_LIB = FILE_SAS_OUT_TBL = FILE_SAS_INP_LIB = FILE_SAS_INP_TBL = FILE_SAS_ROW_WRT = ""
+                #     FILE_SAS_INP_MUL_TBLS = FILE_SAS_INP_MUL_FLG = 0
 
                 if FILE_SAS_STP_NM == 'DATA':
                     FILE_SAS_PROC_PROD, FILE_SAS_PROC_CAT = 'Base SAS', 'Data Management'
