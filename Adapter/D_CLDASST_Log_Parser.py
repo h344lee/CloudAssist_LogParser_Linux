@@ -1473,7 +1473,7 @@ if __name__ == "__main__":
 
                 rows, libs, tbls = get_sas_row_write(record_content)
                 if rows is not None:
-                    FILE_SAS_ROW_WRT = int(rows)
+                    FILE_SAS_ROW_WRT = rows
                     if FILE_SAS_OUT_LIB == "":
                         FILE_SAS_OUT_LIB = libs
                     else:
