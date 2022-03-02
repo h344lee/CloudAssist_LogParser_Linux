@@ -21,7 +21,7 @@ def init_proc_cat_prod(cat_prod_dict):
         wrk_cat_ref_df = pd.read_csv(current_path+'/reference/' + 'D_CLDASST_DISC_WRK_CAT_REF.csv')
 
     wrk_cat_ref_df = wrk_cat_ref_df[['SAS9_Proc', 'SAS9_Prod', 'SAS9_Proc_Cat']]
-    # print(wrk_cat_ref_df.to_string())
+
     for index, row in wrk_cat_ref_df.iterrows():
         key = row['SAS9_Proc']
         sas9_prod = row['SAS9_Prod']
@@ -497,7 +497,7 @@ def get_proc_sql(sql_block):
             if len(filtered_line) == 1 and filtered_line[0] != '':
                 sql_lines += filtered_line[0].strip() + " "
 
-    if sql_lines[0] == '!':
+    if len(sql_lines) > 0 and sql_lines[0] == '!':
         sql_lines = sql_lines[1:].strip()
 
     if "The SAS System" in sql_lines:
@@ -634,7 +634,6 @@ def get_output_table_from_sql(proc_sql):
     lib_table_list += sql_table_regex.findall(proc_sql)
 
     if len(lib_table_list) != 0:
-
         for table in lib_table_list:
             if len(table) != 0:
                 table = table.strip()
@@ -644,7 +643,7 @@ def get_output_table_from_sql(proc_sql):
             if len(table) == 1 and table[0] not in output_table:
                 output_library.append('work')
                 output_table.append(table[0])
-            elif table[1] not in output_table:
+            elif len(table) > 1 and table[1] not in output_table:
                 output_library.append(table[0])
                 output_table.append(table[1])
 
@@ -1508,7 +1507,11 @@ if __name__ == "__main__":
                 elif FILE_SAS_STP_NM == '':
                     pass
                 else:
-                    FILE_SAS_PROC_PROD, FILE_SAS_PROC_CAT = cat_prod_dict[FILE_SAS_STP_NM.upper()]
+                    proc_tuple = cat_prod_dict.get(FILE_SAS_STP_NM.upper())
+                    if proc_tuple is not None:
+                        FILE_SAS_PROC_PROD, FILE_SAS_PROC_CAT = proc_tuple
+                    else:
+                        FILE_SAS_PROC_PROD, FILE_SAS_PROC_CAT = 'Base SAS', 'Data Management'
 
                 if len(FILE_SAS_INP_LIB.split(';')) > 1:
                     FILE_SAS_INP_MUL_FLG = 1
