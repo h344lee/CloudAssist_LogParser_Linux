@@ -31,6 +31,53 @@ def init_proc_cat_prod(cat_prod_dict):
     return cat_prod_dict
 
 
+def init_migr_rule():
+    migr_rule_dict = dict()
+    current_path = os.getcwd()
+    if platform.system() == 'Windows':
+        migr_rule_ref_df = pd.read_csv(current_path + '\\reference\\' + 'D_CLDASST_DISC_MIGR_RULE_REF.csv')
+    else:
+        migr_rule_ref_df = pd.read_csv(current_path + '/reference/' + 'D_CLDASST_DISC_MIGR_RULE_REF.csv')
+
+    for index, row in migr_rule_ref_df.iterrows():
+        key = str(row['ID'])
+        migr_rule = row['RULE']
+        migr_rule_dict[key] = migr_rule
+
+    return migr_rule_dict
+
+
+def init_inmem():
+    inmem_list = []
+    current_path = os.getcwd()
+    if platform.system() == 'Windows':
+        inmem_ref_df = pd.read_csv(current_path + '\\reference\\' + 'D_CLDASST_DISC_INMEM_FLG_REF.csv')
+    else:
+        inmem_ref_df = pd.read_csv(current_path + '/reference/' + 'D_CLDASST_DISC_INMEM_FLG_REF.csv')
+
+    for index, row in inmem_ref_df.iterrows():
+        inmem_list.append(row['INMEM_KEYWORD'])
+
+    inmem_tuple = tuple(inmem_list)
+
+    return inmem_tuple
+
+def init_proc_grid():
+    proc_grid_list = []
+    current_path = os.getcwd()
+    if platform.system() == 'Windows':
+        proc_grid_ref_df = pd.read_csv(current_path + '\\reference\\' + 'D_CLDASST_DISC_PROC_GRID_FLG_REF.csv')
+    else:
+        proc_grid_ref_df = pd.read_csv(current_path + '/reference/' + 'D_CLDASST_DISC_PROC_GRID_FLG_REF.csv')
+
+    for index, row in proc_grid_ref_df.iterrows():
+        proc_grid_list.append(row['PROC_GRID_KEYWORD'])
+
+    proc_grid_tuple = tuple(proc_grid_list)
+
+    return proc_grid_tuple
+
+
 def getInventory(current_path, current_folder, visited, file_list):
     if platform.system() == 'Windows':
         current_path = current_path + '\\' + current_folder
@@ -1086,83 +1133,15 @@ def get_migration_disp(FILE_SAS_EXC_CPU_TM, FILE_SAS_EXC_RL_TM, FILE_SAS_STP, FI
     return REC_ACT, RULE_ID, recommendation
 
 
-def get_migr_rule(FILE_SAS_MIGR_RUL_ID):
+def get_migr_rule(FILE_SAS_MIGR_RUL_ID, migr_rule_dict):
     if FILE_SAS_MIGR_RUL_ID == "":
         return ""
 
-    migr_rule_dict = {
-        "1": "Real_Time >=30",
-        "2": "CPU Time >= Real Time",
-        "3": "volume of table > 50GB",
-        "4": "SAS Step == PROC LOGISTIC",
-        "5": "SAS Step == PROC MIXED",
-        "6": "SAS Step == PROC REG",
-        "7": "no_of_functon_used > 20",
-        "8": "Reporting Proc Real Time >  1 hr",
-        "9": "Procedure == PROC SQL",
-        "10": "Procedure == PROC SORT",
-        "11": "Procedure == PROC TRANSPOSE",
-        "12": "Procedure == PROC FORMAT",
-        "13": "Procedure == PROC FedSQL",
-        "14": "Procedure == PROC APPEND",
-        "15": "INDEX  used in DATA statement",
-        "16": "FIRSTOBS used in DATA statement",
-        "17": "OBS used in DATA statement",
-        "18": "POINTOBS used in DATA statement",
-        "19": "INFILE in Data statement",
-        "20": "INPUT in Data statement",
-        "21": "DATALINES in Data statement",
-        "22": "VARFMT function present",
-        "23": "CPU Time >= Real Time AND CPU TIME >= 10"
-    }
     migration_rule = migr_rule_dict.get(FILE_SAS_MIGR_RUL_ID)
     return migration_rule
 
 
-def get_proc_inmem(record_content, FILE_SAS_STP, FILE_SAS_STP_NM):
-    inmem_tuple = ('SAS_INSTALL_EP',
-                   '%INDTD_PUBLISH_MODEL',
-                   '%INDAC_PUBLISH_MODEL',
-                   '%INDB2_PUBLISH_MODEL ',
-                   '%INDGP_PUBLISH_MODEL ',
-                   '%INDHD_PUBLISH_MODEL',
-                   '%INDNZ_PUBLISH_MODEL ',
-                   '%INDOR_PUBLISH_MODEL ',
-                   '%INDHN_PUBLISH_MODEL ',
-                   '%INDHN_RUN_MODEL ',
-                   '%INDHD_RUN_MODEL',
-                   'SQLGENERATION ',
-                   'DSACCEL',
-                   'HADOOPPLATFORM',
-                   'SQLGENERATION',
-                   'SQLMAPPUTTO',
-                   'SQLREDUCEPUT',
-                   'SAS_EP ',
-                   'SAS_EP_ENABLE_EPCS',
-                   'SAS_SCORE_EP ',
-                   'SAS_EP_JOB_MANAGEMENT_URL ',
-                   'SASEPFUNC',
-                   'DSACCEL',
-                   '%INDTD_CREATE_MODELTABLE ',
-                   '%INDB2_CREATE_MODELTABLE',
-                   '%INDNZ_CREATE_MODELTABLE',
-                   '%INDOR_CREATE_MODELTABLE ',
-                   'SAS_SCORE_EP',
-                   'SAS_SYSFNLIB',
-                   'HPSVM',
-                   'HPFOREST ',
-                   'SAS_SCORE',
-                   'INDCONN ',
-                   'EM_PREDICTION',
-                   'DS2ACCEL=YES',
-                   'SQLGENERATION',
-                   'DSACCEL',
-                   'HADOOPPLATFORM',
-                   'SQLGENERATION',
-                   'SQLMAPPUTTO',
-                   'SQLREDUCEPUT',
-                   'EM_PROBABILITY',
-                   'EM_DECISION')
+def get_proc_inmem(record_content, FILE_SAS_STP, FILE_SAS_STP_NM, inmem_tuple):
 
     for keyword in inmem_tuple:
         if keyword in record_content.upper():
@@ -1182,103 +1161,8 @@ def get_proc_etl(FILE_SAS_PROC_CAT, FILE_SAS_STP, FILE_SAS_STP_NM):
         return 0
 
 
-def get_proc_grid(record_content):
-    grid_keyword = ('GRIDOPTSET',
-                    'GRIDWAITTIMEOUT',
-                    'GRIDWAITRESULTS',
-                    'GRIDRUNSASLM',
-                    'GRIDRUNSASDMS',
-                    'GRIDRUNCMDINT',
-                    'GRIDWATCHOUTPUT',
-                    'GRIDWAITLOGLIST',
-                    'GRIDWAITNORESULTS',
-                    'GRIDWAITNORESULTSNOLOG',
-                    'GRIDRUNPGM',
-                    'GRDSVC_HOSTLIST',
-                    'GRDSVC_OPTSETS',
-                    'GRIDAPPSERVER',
-                    'GRIDFILESIN',
-                    'GRIDFORCECLEAN',
-                    'GRIDGETRESULTS',
-                    'GRIDGETSTATUS',
-                    'GRIDJOBNAME',
-                    'GRIDJOBOPTS',
-                    'GRIDKILLJOB',
-                    'GRIDLICENSEFILE',
-                    'GRIDLRESTARTOK',
-                    'GRIDOPTSET',
-                    'GRIDPASSWORD',
-                    'GRIDPASS',
-                    'GRIDPWD',
-                    'GRIDPLUGINPATH',
-                    'GRIDRESTARTOK',
-                    'GRIDRESULTSDIR',
-                    'GRIDRUNCMD',
-                    'GRIDRUNCMDINT',
-                    'GRIDRUNPGM',
-                    'GRIDRUNSASDMS',
-                    'GRIDRUNSASLM',
-                    'GRIDSASOPTS',
-                    'GRIDSETPERMS',
-                    'GRIDSTAGECMD',
-                    'GRIDSTAGEHOST',
-                    'GRIDSUBMITPGM',
-                    'GRIDWAIT',
-                    'GRIDWAITLOGLIST',
-                    'GRIDWAITNORESULTS',
-                    'GRIDWAITRESULTS',
-                    'GRIDWAITRESULTSNOLOG',
-                    'GRIDWAITTIMEOUT',
-                    'GRIDWATCHOUTPUT',
-                    'GRIDWORKLOAD',
-                    'GRDSVC_ENABLE ',
-                    'GRDSVC_GETADDR ',
-                    'GRDSVC_GETINFO ',
-                    'GRDSVC_GETNAME ',
-                    'GRDSVC_HOSTLIST ',
-                    'GRDSVC_NNODES ',
-                    'GRDSVC_OPTSETS',
-                    'SASGSUB',
-                    'GRIDSUBMITPGM ',
-                    'GRIDLRESTART',
-                    'GRIDSASOPTS ',
-                    'GRIDRUNPGM',
-                    'GRIDRUNSASLM',
-                    'GRIDRUNSASDMS',
-                    'GRIDWAITTIMEOUT ',
-                    'GRIDRUNCMD ',
-                    'GRIDRUNCMDINT ',
-                    'GRIDWAITTIMEOUT',
-                    'GRIDKILLJOB ',
-                    'GRIDGETSTATUS ',
-                    'GRIDGETRESULTS ',
-                    'GRIDRESULTSDIR ',
-                    'GRIDFORCECLEAN',
-                    'GRIDAPPSERVER ',
-                    'CLEANGRIDWORK ',
-                    'GRIDWORK',
-                    'GRIDWORKREM ',
-                    'GRIDFILESIN ',
-                    'GRIDSTAGECMD',
-                    'GRIDSTAGEHOST',
-                    'GRIDWAIT',
-                    'GRIDWAITTIMEOUTGRIDWAITRESULTS',
-                    'GRIDWAITLOGLIST',
-                    'GRIDWAITNORESULTS',
-                    'GRIDWAITRESULTSNOLOG',
-                    'GRIDWATCHOUTPUT',
-                    'GRIDJOBNAME ',
-                    'GRIDJOBOPTS',
-                    'GRIDOPTSET',
-                    'GRIDWORKLOAD',
-                    'GRDSVC_ENABLE',
-                    'SASGSUB ',
-                    'GRIDSUBMITPGM ',
-                    'GRIDRESTARTOK',
-                    'GRIDLRESTARTOK',
-                    'GRIDSASOPTS')
-
-    for keyword in grid_keyword:
+def get_proc_grid(record_content, proc_grid_tuple):
+    for keyword in proc_grid_tuple:
         if keyword in record_content.upper():
             return 1
     return 0
@@ -1389,6 +1273,9 @@ if __name__ == "__main__":
     file_list = []
     cat_prod_dict = dict()
     cat_prod_dict = init_proc_cat_prod(cat_prod_dict)
+    migr_rule_dict = init_migr_rule()
+    inmem_tuple = init_inmem()
+    proc_grid_tuple = init_proc_grid()
     getInventory(current_path, current_folder, visited, file_list)
     file_id_counter = 1
     sas_file_id_counter = 1
@@ -1525,13 +1412,13 @@ if __name__ == "__main__":
                     FILE_SAS_STP, FILE_SAS_STP_NM,
                     record_content)
 
-                FILE_SAS_MIGR_RUL = get_migr_rule(FILE_SAS_MIGR_RUL_ID)
+                FILE_SAS_MIGR_RUL = get_migr_rule(FILE_SAS_MIGR_RUL_ID, migr_rule_dict)
 
-                FILE_SAS_PROC_INMEM_FLG = get_proc_inmem(record_content, FILE_SAS_STP, FILE_SAS_STP_NM)
+                FILE_SAS_PROC_INMEM_FLG = get_proc_inmem(record_content, FILE_SAS_STP, FILE_SAS_STP_NM, inmem_tuple)
 
                 FILE_SAS_PROC_ELT_FLG = get_proc_etl(FILE_SAS_PROC_CAT, FILE_SAS_STP, FILE_SAS_STP_NM)
 
-                FILE_SAS_PROC_GRID_FLG = get_proc_grid(record_content)
+                FILE_SAS_PROC_GRID_FLG = get_proc_grid(record_content, proc_grid_tuple)
 
                 FILE_SAS_PROC_INDB_FLG = get_indb(record_content)
 

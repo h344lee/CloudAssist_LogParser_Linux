@@ -1,0 +1,24 @@
+ID,RULE
+1,Real_Time >=30
+2,CPU Time >= Real Time
+3,volume of table > 50GB
+4,SAS Step == PROC LOGISTIC
+5,SAS Step == PROC MIXED
+6,SAS Step == PROC REG
+7,no_of_functon_used > 20
+8,Reporting Proc Real Time >  1 hr
+9,Procedure == PROC SQL
+10,Procedure == PROC SORT
+11,Procedure == PROC TRANSPOSE
+12,Procedure == PROC FORMAT
+13,Procedure == PROC FedSQL
+14,Procedure == PROC APPEND
+15,INDEX  used in DATA statement
+16,FIRSTOBS used in DATA statement
+17,OBS used in DATA statement
+18,POINTOBS used in DATA statement
+19,INFILE in Data statement
+20,INPUT in Data statement
+21,DATALINES in Data statement
+22,VARFMT function present
+23,CPU Time >= Real Time AND CPU TIME >= 10
